@@ -206,8 +206,10 @@ typedef void* yyscan_t;
   id
   ids
   nm
-  typename
-  typetoken
+  signed
+  plus_num
+  minus_num
+  number
 %type <node>
   cmd
   expr
@@ -224,6 +226,8 @@ typedef void* yyscan_t;
   values
   xfullname
   fullname
+  typetoken
+  typename
 %type <list>
   exprlist
   groupby_opt
@@ -388,7 +392,7 @@ columnname:
   nm typetoken {
     $$ = parse_node_alloc("attribute");
     parse_node_add_value($$, "name", $1);
-    parse_node_add_value($$, "attribute_type", $2);
+    parse_node_add_child($$, "attribute_type", $2);
   }
 ;
 
@@ -403,9 +407,14 @@ typetoken:
     $$ = 0;
   }
 | typename {
-    $$ = $1;
+    $$ = parse_node_alloc("type");
+    parse_node_add_value($$, "name", $1);
   }
-| typename LP signed RP { yyerror(NULL, scanner, "complex type definitions not yet supported"); }
+| typename LP signed RP {
+    $$ = parse_node_alloc("type");
+    parse_node_add_value($$, "name", $1);
+    parse_node_add_value($$, "argument", $3);
+  }
 | typename LP signed COMMA signed RP { yyerror(NULL, scanner, "complex type definitions not yet supported"); }
 ;
 
@@ -417,8 +426,8 @@ typename:
 ;
 
 signed:
-  plus_num
-| minus_num
+  plus_num { $$ = $1; }
+| minus_num { $$ = $1; }
 ;
 
 scanpt:
@@ -1011,12 +1020,17 @@ nmnum:
 ;
 
 plus_num:
-  PLUS number
-| number
+  PLUS number { $$ = $2; }
+| number { $$ = $1; }
 ;
 
 minus_num:
-  MINUS number
+  MINUS number {
+    char *num = malloc(strlen("-") + strlen($2) + 1);
+    strcpy(num, "-");
+    strcat(num, $2);
+    $$ = num;
+  }
 ;
 
 trigger_decl:
@@ -1205,7 +1219,7 @@ ids:
 ;
 
 number:
-  INTEGER
-| FLOAT
+  INTEGER { $$ = $1; }
+| FLOAT { $$ = $1; }
 ;
 %%

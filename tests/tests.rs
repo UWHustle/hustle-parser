@@ -18,17 +18,26 @@ mod tests {
                 {
                     "type": "attribute",
                     "name": "a",
-                    "attribute_type": "INT1"
+                    "attribute_type": {
+                        "type": "type",
+                        "name": "INT1"
+                    }
                 },
                 {
                     "type": "attribute",
                     "name": "b",
-                    "attribute_type": "FLOAT4"
+                    "attribute_type": {
+                        "type": "type",
+                        "name": "FLOAT4"
+                    }
                 },
                 {
                     "type": "attribute",
                     "name": "c",
-                    "attribute_type": "IPv4"
+                    "attribute_type": {
+                        "type": "type",
+                        "name": "IPv4"
+                    }
                 }
             ]
         });
