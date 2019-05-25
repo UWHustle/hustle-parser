@@ -548,7 +548,10 @@ oneselect:
 
     parse_node_add_child_list($$, "select", $3);
     parse_node_add_child($$, "from", $4);
-    parse_node_add_child($$, "where", $5);
+
+    if ($5) {
+      parse_node_add_child($$, "where", $5);
+    }
 
     if ($6) {
       parse_node_add_child_list($$, "group_by", $6);
