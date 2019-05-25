@@ -1,3 +1,5 @@
+#![recursion_limit = "128"]
+
 extern crate hustle_parser;
 
 #[cfg(test)]
@@ -85,6 +87,93 @@ mod tests {
     }
 
     #[test]
+    fn select_where() {
+        let ast_string = parse(
+            "SELECT a, b \
+            FROM t \
+            WHERE a < 3 AND a > 1 AND b >= 2 AND b <= 4;");
+        let ast: Value = serde_json::from_str(&ast_string).unwrap();
+        let expected = json!({
+            "type": "select",
+            "from": {
+                "type": "reference",
+                "relation": "t"
+            },
+            "where": {
+                "type": "binary_operation",
+                "operator": "and",
+                "left": {
+                    "type": "binary_operation",
+                    "operator": "and",
+                    "left": {
+                        "type": "binary_operation",
+                        "operator": "and",
+                        "left": {
+                            "type": "binary_operation",
+                            "operator": "lt",
+                            "left": {
+                                "type": "reference",
+                                "attribute": "a"
+                            },
+                            "right": {
+                                "type": "term",
+                                "value": "3"
+                            }
+                        },
+                        "right": {
+                            "type": "binary_operation",
+                            "operator": "gt",
+                            "left": {
+                                "type": "reference",
+                                "attribute": "a"
+                            },
+                            "right": {
+                                "type": "term",
+                                "value": "1"
+                            }
+                        }
+                    },
+                    "right": {
+                        "type": "binary_operation",
+                        "operator": "ge",
+                        "left": {
+                            "type": "reference",
+                            "attribute": "b"
+                        },
+                        "right": {
+                            "type": "term",
+                            "value": "2"
+                        }
+                    }
+                },
+                "right": {
+                    "type": "binary_operation",
+                    "operator": "le",
+                    "left": {
+                        "type": "reference",
+                        "attribute": "b"
+                    },
+                    "right": {
+                        "type": "term",
+                        "value": "4"
+                    }
+                }
+            },
+            "select": [
+                {
+                    "type": "reference",
+                    "attribute": "a"
+                },
+                {
+                    "type": "reference",
+                    "attribute": "b"
+                }
+            ]
+        });
+        assert_eq!(ast, expected);
+    }
+
+    #[test]
     fn cartesian() {
         let ast_string = parse("SELECT t.a, u.b FROM t, u;");
         let ast: Value = serde_json::from_str(&ast_string).unwrap();
@@ -135,20 +224,18 @@ mod tests {
                 }
             },
             "where": {
-                "type": "function",
-                "name": "eq",
-                "arguments": [
-                    {
-                        "type": "reference",
-                        "relation": "t",
-                        "attribute": "a"
-                    },
-                    {
-                        "type": "reference",
-                        "relation": "u",
-                        "attribute": "b"
-                    }
-                ]
+                "type": "binary_operation",
+                "operator": "eq",
+                "left": {
+                    "type": "reference",
+                    "relation": "t",
+                    "attribute": "a"
+                },
+                "right": {
+                    "type": "reference",
+                    "relation": "u",
+                    "attribute": "b"
+                }
             },
             "select": [
                 {
@@ -183,20 +270,18 @@ mod tests {
                     "relation": "u"
                 },
                 "predicate": {
-                    "type": "function",
-                    "name": "eq",
-                    "arguments": [
-                        {
-                            "type": "reference",
-                            "relation": "t",
-                            "attribute": "a"
-                        },
-                        {
-                            "type": "reference",
-                            "relation": "u",
-                            "attribute": "b"
-                        }
-                    ]
+                    "type": "binary_operation",
+                    "operator": "eq",
+                    "left": {
+                        "type": "reference",
+                        "relation": "t",
+                        "attribute": "a"
+                    },
+                    "right": {
+                        "type": "reference",
+                        "relation": "u",
+                        "attribute": "b"
+                    }
                 }
             },
             "select": [
@@ -253,18 +338,16 @@ mod tests {
                 "relation": "t"
             },
             "where": {
-                "type": "function",
-                "name": "eq",
-                "arguments": [
-                    {
-                        "type": "reference",
-                        "attribute": "a"
-                    },
-                    {
-                        "type": "term",
-                        "value": "1"
-                    }
-                ]
+                "type": "binary_operation",
+                "operator": "eq",
+                "left": {
+                    "type": "reference",
+                    "attribute": "a"
+                },
+                "right": {
+                    "type": "term",
+                    "value": "1"
+                }
             },
             "assignments": [
                 {
@@ -276,6 +359,46 @@ mod tests {
                     }
                 }
             ]
+        });
+        assert_eq!(ast, expected);
+    }
+
+    #[test]
+    fn delete() {
+        let ast_string = parse("DELETE FROM t WHERE a = 1;");
+        let ast: Value = serde_json::from_str(&ast_string).unwrap();
+        let expected = json!({
+            "type": "delete",
+            "from": {
+                "type": "reference",
+                "relation": "t"
+            },
+            "where": {
+                "type": "binary_operation",
+                "operator": "eq",
+                "left": {
+                    "type": "reference",
+                    "attribute": "a"
+                },
+                "right": {
+                    "type": "term",
+                    "value": "1"
+                }
+            }
+        });
+        assert_eq!(ast, expected);
+    }
+
+    #[test]
+    fn drop_table() {
+        let ast_string = parse("DROP TABLE t;");
+        let ast: Value = serde_json::from_str(&ast_string).unwrap();
+        let expected = json!({
+            "type": "drop_table",
+            "name": {
+                "type": "reference",
+                "relation": "t"
+            }
         });
         assert_eq!(ast, expected);
     }

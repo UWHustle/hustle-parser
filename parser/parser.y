@@ -829,20 +829,42 @@ expr:
 | id LP distinct exprlist RP over_clause { yyerror(NULL, scanner, "OVER not yet supported"); }
 | id LP STAR RP over_clause { yyerror(NULL, scanner, "OVER not yet supported"); }
 | LP nexprlist COMMA expr RP { yyerror(NULL, scanner, "expression lists not yet supported"); }
-| expr AND expr { yyerror(NULL, scanner, "AND in expression not yet supported"); }
+| expr AND expr {
+    $$ = parse_node_alloc("binary_operation");
+    parse_node_add_value($$, "operator", "and");
+    parse_node_add_child($$, "left", $1);
+    parse_node_add_child($$, "right", $3);
+  }
 | expr OR expr { yyerror(NULL, scanner, "OR in expression not yet supported"); }
-| expr LT expr { yyerror(NULL, scanner, "< in expression not yet supported"); }
-| expr GT expr { yyerror(NULL, scanner, "> in expression not yet supported"); }
-| expr GE expr { yyerror(NULL, scanner, ">= in expression not yet supported"); }
-| expr LE expr { yyerror(NULL, scanner, "<= in expression not yet supported"); }
+| expr LT expr {
+    $$ = parse_node_alloc("binary_operation");
+    parse_node_add_value($$, "operator", "lt");
+    parse_node_add_child($$, "left", $1);
+    parse_node_add_child($$, "right", $3);
+  }
+| expr GT expr {
+    $$ = parse_node_alloc("binary_operation");
+    parse_node_add_value($$, "operator", "gt");
+    parse_node_add_child($$, "left", $1);
+    parse_node_add_child($$, "right", $3);
+}
+| expr GE expr {
+    $$ = parse_node_alloc("binary_operation");
+    parse_node_add_value($$, "operator", "ge");
+    parse_node_add_child($$, "left", $1);
+    parse_node_add_child($$, "right", $3);
+}
+| expr LE expr {
+    $$ = parse_node_alloc("binary_operation");
+    parse_node_add_value($$, "operator", "le");
+    parse_node_add_child($$, "left", $1);
+    parse_node_add_child($$, "right", $3);
+}
 | expr EQ expr {
-    dynamic_array *arguments = dynamic_array_alloc();
-    dynamic_array_push_back(arguments, $1);
-    dynamic_array_push_back(arguments, $3);
-
-    $$ = parse_node_alloc("function");
-    parse_node_add_value($$, "name", "eq");
-    parse_node_add_child_list($$, "arguments", arguments);
+    $$ = parse_node_alloc("binary_operation");
+    parse_node_add_value($$, "operator", "eq");
+    parse_node_add_child($$, "left", $1);
+    parse_node_add_child($$, "right", $3);
   }
 | expr NE expr { yyerror(NULL, scanner, "<> in expression not yet supported"); }
 | expr BITAND expr { yyerror(NULL, scanner, "& in expression not yet supported"); }
