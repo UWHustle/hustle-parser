@@ -234,6 +234,7 @@ typedef void* yyscan_t;
   columnlist
   idlist_opt
   idlist
+  setlist
 
 %%
 input:
@@ -287,7 +288,14 @@ cmd:
       parse_node_add_child($$, "where", $6);
     }
   }
-| with UPDATE orconf xfullname indexed_opt SET setlist where_opt orderby_opt limit_opt { yyerror(NULL, scanner, "UPDATE not yet supported"); }
+| with UPDATE orconf xfullname indexed_opt SET setlist where_opt orderby_opt limit_opt {
+    $$ = parse_node_alloc("update");
+    parse_node_add_child($$, "relation", $4);
+    parse_node_add_child_list($$, "assignments", $7);
+    if ($8) {
+      parse_node_add_child($$, "where", $8);
+    }
+  }
 | with insert_cmd INTO xfullname idlist_opt select upsert {
     $$ = parse_node_alloc("insert");
     parse_node_add_child($$, "into", $4);
@@ -380,7 +388,7 @@ columnname:
   nm typetoken {
     $$ = parse_node_alloc("attribute");
     parse_node_add_value($$, "name", $1);
-    parse_node_add_value($$, "type", $2);
+    parse_node_add_value($$, "attribute_type", $2);
   }
 ;
 
@@ -510,7 +518,7 @@ onconf:
 
 orconf:
   /* empty */
-| OR resolvetype
+| OR resolvetype { yyerror(NULL, scanner, "OR not yet supported"); }
 ;
 
 resolvetype:
@@ -745,10 +753,22 @@ where_opt:
 ;
 
 setlist:
-  setlist COMMA nm EQ expr
-| setlist COMMA LP idlist RP EQ expr
-| nm EQ expr
-| LP idlist RP EQ expr
+  setlist COMMA nm EQ expr {
+    $$ = $1;
+    parse_node *set_node = parse_node_alloc("assignment");
+    parse_node_add_value(set_node, "attribute", $3);
+    parse_node_add_child(set_node, "value", $5);
+    dynamic_array_push_back($$, set_node);
+  }
+| setlist COMMA LP idlist RP EQ expr { yyerror(NULL, scanner, "multiple SET not yet supported"); }
+| nm EQ expr {
+    $$ = dynamic_array_alloc();
+    parse_node *set_node = parse_node_alloc("assignment");
+    parse_node_add_value(set_node, "attribute", $1);
+    parse_node_add_child(set_node, "value", $3);
+    dynamic_array_push_back($$, set_node);
+  }
+| LP idlist RP EQ expr { yyerror(NULL, scanner, "multiple SET not yet supported"); }
 ;
 
 upsert:

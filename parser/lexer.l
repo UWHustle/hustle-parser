@@ -150,12 +150,12 @@ WITHOUT         		{ return TK_WITHOUT; }
 "&"                   	{ return TK_BITAND; }
 "|"                   	{ return TK_BITOR; }
 "~"                   	{ return TK_BITNOT; }
-[xX]'[a-zA-Z0-9]'   	{ return TK_BLOB; }
+[xX]'[a-zA-Z0-9]'   	{ yylval->strval = strdup(yytext); return TK_BLOB; }
 ","                   	{ return TK_COMMA; }
 "||"                  	{ return TK_CONCAT; }
 "."						{ return TK_DOT; }
 "="                     { return TK_EQ; }
-[0-9]*\.[0-9]+			{ return TK_FLOAT; }
+[0-9]*\.[0-9]+			{ yylval->strval = strdup(yytext); return TK_FLOAT; }
 ">="					{ return TK_GE; }
 ">"						{ return TK_GT; }
 [0-9]+					{ yylval->strval = strdup(yytext); return TK_INTEGER; }
@@ -170,7 +170,7 @@ WITHOUT         		{ return TK_WITHOUT; }
 ">>"					{ return TK_RSHIFT; }
 "/"						{ return TK_SLASH; }
 "*"						{ return TK_STAR; }
-\'.*\'					{ return TK_STRING; }
+\'.*\'					{ yylval->strval = strdup(yytext); return TK_STRING; }
 ";"						{ return TK_SEMI; }
 [a-zA-Z][a-zA-Z0-9_]*	{ yylval->strval = strdup(yytext); return TK_ID; }
 [ \t]

@@ -15,14 +15,3 @@ pub fn parse(sql: &str) -> String {
             .to_owned()
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use crate::parse;
-
-    #[test]
-    fn it_works() {
-        let ast = parse("SELECT a FROM t;");
-        println!("{}", ast);
-    }
-}
